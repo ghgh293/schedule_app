@@ -3,47 +3,68 @@ import streamlit as st
 # Заголовок приложения
 st.title("Приложение расписания")
 
-# Выбор режима: Студент или Преподаватель
+# Выбор роли
 role = st.sidebar.selectbox("Выберите вашу роль:", ["Студент", "Преподаватель"])
 
-# Список дней недели (без субботы)
+# Список групп
+groups = ["Группа 101", "Группа 102", "Группа 103"]
+
+# Дни недели
 days_of_week = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница"]
 
-# Пример данных (можно потом заменить на базу данных)
-schedule = {
-    "Понедельник": [],
-    "Вторник": [],
-    "Среда": [],
-    "Четверг": [],
-    "Пятница": [],
-}
+# Расписание: словарь {группа: {день недели: список пар}}
+if 'schedule' not in st.session_state:
+    st.session_state.schedule = {group: {day: [] for day in days_of_week} for group in groups}
+schedule = st.session_state.schedule
 
 # Функция отображения расписания
-def show_schedule():
+def show_schedule(selected_group):
     for day in days_of_week:
         st.subheader(day)
-        if schedule[day]:
-            for pair in schedule[day]:
-                st.write(f"• {pair}")
+        if schedule[selected_group][day]:
+            for pair in schedule[selected_group][day]:
+                st.markdown(
+                    f"{pair['time']}** — {pair['subject']} (кабинет {pair['room']})"
+                )
         else:
-            st.write("Нет пар")
+            st.write(":blue[Нет пар]")
 
 # Функция редактирования расписания
-def edit_schedule():
+def edit_schedule(selected_group):
     day = st.selectbox("Выберите день недели", days_of_week)
     subject = st.text_input("Введите название пары")
-    
+    time = st.text_input("Введите время пары (например, 08:30)")
+    room = st.text_input("Введите номер кабинета или корпус")
+
     if st.button("Добавить пару"):
-        if subject:
-            schedule[day].append(subject)
+        if subject and time and room:
+            schedule[selected_group][day].append({"subject": subject, "time": time, "room": room})
             st.success(f"Пара '{subject}' добавлена в {day}")
 
-# Основная логика
+    st.divider()
+
+    st.subheader("Удаление пары")
+    day_to_delete = st.selectbox("Выберите день для удаления пары", days_of_week)
+    if schedule[selected_group][day_to_delete]:
+        pair_to_delete = st.selectbox(
+            "Выберите пару для удаления",
+            [f"{pair['time']} — {pair['subject']} (каб. {pair['room']})" for pair in schedule[selected_group][day_to_delete]]
+        )
+        if st.button("Удалить выбранную пару"):
+            index = [f"{pair['time']} — {pair['subject']} (каб. {pair['room']})" for pair in schedule[selected_group][day_to_delete]].index(pair_to_delete)
+            schedule[selected_group][day_to_delete].pop(index)
+            st.success("Пара удалена.")
+    else:
+        st.info("Нет пар для удаления в этот день.")
+
+# Основная логика приложения
 if role == "Студент":
-    st.header("Ваше расписание:")
-    show_schedule()
+    selected_group = st.sidebar.selectbox("Выберите вашу группу:", groups)
+    st.header(f"Расписание для {selected_group}:")
+    show_schedule(selected_group)
 else:
-    st.header("Редактировать расписание:")
-    edit_schedule()
-    st.header("Актуальное расписание:")
-    show_schedule()
+    selected_group = st.sidebar.selectbox("Выберите группу для редактирования:", groups)
+    st.header(f"Редактирование расписания для {selected_group}:")
+    edit_schedule(selected_group)
+    st.header(f"Актуальное расписание для {selected_group}:")
+    show_schedule(selected_group)
