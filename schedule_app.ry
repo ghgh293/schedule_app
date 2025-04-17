@@ -1,0 +1,49 @@
+import streamlit as st
+
+# Заголовок приложения
+st.title("Приложение расписания")
+
+# Выбор режима: Студент или Преподаватель
+role = st.sidebar.selectbox("Выберите вашу роль:", ["Студент", "Преподаватель"])
+
+# Список дней недели (без субботы)
+days_of_week = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница"]
+
+# Пример данных (можно потом заменить на базу данных)
+schedule = {
+    "Понедельник": [],
+    "Вторник": [],
+    "Среда": [],
+    "Четверг": [],
+    "Пятница": [],
+}
+
+# Функция отображения расписания
+def show_schedule():
+    for day in days_of_week:
+        st.subheader(day)
+        if schedule[day]:
+            for pair in schedule[day]:
+                st.write(f"• {pair}")
+        else:
+            st.write("Нет пар")
+
+# Функция редактирования расписания
+def edit_schedule():
+    day = st.selectbox("Выберите день недели", days_of_week)
+    subject = st.text_input("Введите название пары")
+    
+    if st.button("Добавить пару"):
+        if subject:
+            schedule[day].append(subject)
+            st.success(f"Пара '{subject}' добавлена в {day}")
+
+# Основная логика
+if role == "Студент":
+    st.header("Ваше расписание:")
+    show_schedule()
+else:
+    st.header("Редактировать расписание:")
+    edit_schedule()
+    st.header("Актуальное расписание:")
+    show_schedule()
